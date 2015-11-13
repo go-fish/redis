@@ -50,17 +50,27 @@ func (this *PipeLine) sendCommand(command [][]byte) (err error) {
 	return
 }
 
-func (this *PipeLine) Flush() (res interface{}, err error) {
+func (this *PipeLine) Flush() (res []interface{}, err error) {
 	err = this.bw.Flush()
 	if err != nil {
 		return
+	}
+
+	res = make([]interface{}, 0, this.count)
+	for i := 0; i < this.count; i++ {
+		var info, err = this.decodeCommand()
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, info)
 	}
 
 	this.mu.Lock()
 	this.count = 0
 	this.mu.Unlock()
 
-	return this.decodeCommand()
+	return
 }
 
 func (this *PipeLine) decodeCommand() (res interface{}, err error) {

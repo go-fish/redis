@@ -4,6 +4,33 @@ import (
 	"fmt"
 	"strconv"
 	"bytes"
+	"errors"
+)
+
+var (
+	ErrUndefinedPool    = errors.New(`Undefined Pool`)
+	ErrRedisAddr        = errors.New(`Invalid Redis Host Or Port`)
+	ErrBadPacket        = errors.New(`Bad Redis Reply Packet`)
+	ErrInvalidMaxActive = errors.New(`Invalid maxActive`)
+	ErrInvalidAddr      = errors.New(`Invalid Redis Host Or Port`)
+	ErrNotConnected     = errors.New(`Client is not connected.`)
+	ErrInvalidValue     = errors.New(`Invalid Redis Value`)
+	ErrNil              = errors.New(`Nil Returned`)
+	ErrGetHeader        = errors.New(`Get Redis Header Error`)
+	ErrUnknowRedisReply = errors.New(`Unknow Redis Reply Type`)
+	ErrReplyPecket      = errors.New(`Redis Reply Packet Is Nil`)
+	ErrTimeout          = errors.New(`Redis Connect Timeout`)
+	ErrTransactionBegin = errors.New(`Fail To Begin Transaction`)
+	ErrTransactionAdd	= errors.New(`Fail To Add Command To Transcation Queued`)
+	ErrWatchKey			= errors.New(`Fail To Watch Key`)
+	ErrUnWatchKey		= errors.New(`Fail To UnWatch Key`)
+	ErrDiscard			= errors.New(`Fail To Discard Transaction`)
+	ErrExec				= errors.New(`Fail To Exec Transaction`)
+
+	// ErrClosed is the error resulting if the redisPool is closed via RedisPool.Close().
+	ErrClosed = errors.New("redisPool is closed")
+
+	endOfLine = []byte{'\r', '\n'}
 )
 
 func intToBytes(num int) []byte {

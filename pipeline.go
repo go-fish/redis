@@ -3,6 +3,7 @@ package redis
 import (
 	"bufio"
 	"bytes"
+	"io"
 	"sync"
 )
 
@@ -23,7 +24,7 @@ func (this *Conn) PipeLine() *PipeLine {
 	}
 }
 
-func (this *PipeLine) Add(command string, args []interface{}) error {
+func (this *PipeLine) Add(command string, args ...interface{}) error {
 	var comm = make([][]byte, 0)
 
 	comm = append(comm, []byte(command))
@@ -31,10 +32,6 @@ func (this *PipeLine) Add(command string, args []interface{}) error {
 	for i := 0; i < len(args); i++ {
 		comm = append(comm, interfaceToBytes(args[i]))
 	}
-
-	this.mu.Lock()
-	this.count++
-	this.mu.Unlock()
 
 	return this.sendCommand(comm)
 }
@@ -46,7 +43,12 @@ func (this *PipeLine) Len() int {
 func (this *PipeLine) sendCommand(command [][]byte) (err error) {
 	var buff = encodeCommand(command)
 
+	this.mu.Lock()
+
+	this.count++
 	_, err = this.bw.Write(buff)
+
+	this.mu.Unlock()
 	return
 }
 
@@ -66,9 +68,7 @@ func (this *PipeLine) Flush() (res []interface{}, err error) {
 		res = append(res, info)
 	}
 
-	this.mu.Lock()
 	this.count = 0
-	this.mu.Unlock()
 
 	return
 }
@@ -83,7 +83,7 @@ func (this *PipeLine) decodeCommand() (res interface{}, err error) {
 
 	switch line[0] {
 	case '+':
-		res = true
+		res = line[1:]
 	case '-':
 		res = line[1:]
 	case ':':
@@ -129,13 +129,21 @@ func (this *PipeLine) readBulkData(line []byte) (res []byte, err error) {
 
 	var n int
 	res = make([]byte, num+2)
-	n, err = this.br.Read(res)
-	if err != nil {
-		return nil, err
+	for {
+		n1, err := this.br.Read(res)
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		n += n1
 	}
 
 	if n < num {
-		return res, nil
+		return res[:n], nil
 	}
 
 	return res[:num], nil

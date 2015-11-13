@@ -765,7 +765,7 @@ func (this *Conn) Flushall() (interface{}, error) {
 	)
 }
 
-func (this *Conn) Do(command string, args []interface{}) (interface{}, error) {
+func (this *Conn) Do(command string, args ...interface{}) (interface{}, error) {
 	var comm = make([][]byte, 0)
 
 	comm = append(comm, []byte(command))

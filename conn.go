@@ -2,32 +2,11 @@ package redis
 
 import (
 	"bufio"
-	"errors"
 	"net"
 	"io"
 	"syscall"
 	"time"
 	"bytes"
-)
-
-var (
-	ErrUndefinedPool    = errors.New(`Undefined Pool`)
-	ErrRedisAddr        = errors.New(`Invalid Redis Host Or Port`)
-	ErrBadPacket        = errors.New(`Bad Redis Reply Packet`)
-	ErrInvalidMaxActive = errors.New(`Invalid maxActive`)
-	ErrInvalidAddr      = errors.New(`Invalid Redis Host Or Port`)
-	ErrNotConnected     = errors.New(`Client is not connected.`)
-	ErrInvalidValue     = errors.New(`Invalid Redis Value`)
-	ErrNil              = errors.New(`Nil Returned`)
-	ErrGetHeader        = errors.New(`Get Redis Header Error`)
-	ErrUnknowRedisReply = errors.New(`Unknow Redis Reply Type`)
-	ErrReplyPecket      = errors.New(`Redis Reply Packet Is Nil`)
-	ErrTimeout          = errors.New(`Redis Connect Timeout`)
-
-	// ErrClosed is the error resulting if the redisPool is closed via RedisPool.Close().
-	ErrClosed = errors.New("redisPool is closed")
-
-	endOfLine = []byte{'\r', '\n'}
 )
 
 type Conn struct {
@@ -135,13 +114,21 @@ func (this *Conn) readBulkData(line []byte) (res []byte, err error) {
 	
 	var n int
 	res = make([]byte, num+2)
-	n, err = this.br.Read(res)
-	if err != nil {
-		return nil, err
+	for {
+		n1, err := this.br.Read(res)
+		if err == io.EOF {
+			break
+		}
+		
+		if err != nil {
+			return nil, err
+		}
+		
+		n += n1
 	}
 	
 	if n < num {
-		return res, nil
+		return res[:n], nil
 	}
 	
 	return res[:num], nil

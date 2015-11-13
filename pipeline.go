@@ -2,8 +2,8 @@ package redis
 
 import (
 	"bufio"
-	"sync"
 	"bytes"
+	"sync"
 )
 
 type PipeLine struct {
@@ -17,9 +17,9 @@ type PipeLine struct {
 
 func (this *Conn) PipeLine() *PipeLine {
 	return &PipeLine{
-		bw:   this.bw,
-		br:   this.br,
-		mu:   &sync.Mutex{},
+		bw: this.bw,
+		br: this.br,
+		mu: &sync.Mutex{},
 	}
 }
 
@@ -92,17 +92,17 @@ func (this *PipeLine) readLine() (line []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	
-	if len(line) > 1 && line[len(line) - 2] == '\r' {
+
+	if len(line) > 1 && line[len(line)-2] == '\r' {
 		return line, nil
 	}
-	
+
 	return nil, ErrBadPacket
 }
 
 func (this *PipeLine) getCount(line []byte) (num int, err error) {
 	var end = bytes.IndexByte(line, '\r')
-	
+
 	return bytesToInt(line[:end])
 }
 
@@ -112,47 +112,47 @@ func (this *PipeLine) readBulkData(line []byte) (res []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if num == -1 {
 		return line, nil
 	}
-	
+
 	var n int
-	res = make([]byte, 0, num+2)
+	res = make([]byte, num+2)
 	n, err = this.br.Read(res)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if n < num {
 		return res, nil
 	}
-	
+
 	return res[:num], nil
 }
 
-func (this *PipeLine) readMultiBulkData(line []byte) (res[][]byte, err error){
+func (this *PipeLine) readMultiBulkData(line []byte) (res [][]byte, err error) {
 	var num int
 	num, err = this.getCount(line)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	res = make([][]byte, num)
 	for i := 0; i < num; i++ {
 		buff, err := this.decodeCommand()
 		if err != nil {
 			return nil, err
 		}
-		
+
 		if b, ok := buff.([]byte); ok {
 			res = append(res, b)
 		}
-		
+
 		if b1, ok := buff.([][]byte); ok {
-			res = append(res, b1...)	
+			res = append(res, b1...)
 		}
 	}
-	
+
 	return
 }

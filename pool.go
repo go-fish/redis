@@ -38,12 +38,15 @@ const (
 	defaultWriterBuffer = 4096
 )
 
+var connectionRequestQueueSize = 1000000
+
 func NewRedisPool(maxIdle, maxActive int, address string) (redisPool *RedisPool, err error) {
 	redisPool = &RedisPool{
 		MaxActive: maxActive,
 		MaxIdle:   maxIdle,
 		Address:   address,
 
+		openerCh:     make(chan struct{}, connectionRequestQueueSize),
 		ReaderBuffer: defaultReaderBuffer,
 		WriterBuffer: defaultWriterBuffer,
 

@@ -2,9 +2,8 @@ package redis
 
 import (
 	"bufio"
-	"bytes"
-	"io"
 	"sync"
+	"bytes"
 )
 
 type PipeLine struct {
@@ -18,9 +17,9 @@ type PipeLine struct {
 
 func (this *Conn) PipeLine() *PipeLine {
 	return &PipeLine{
-		bw: this.bw,
-		br: this.br,
-		mu: &sync.Mutex{},
+		bw:   this.bw,
+		br:   this.br,
+		mu:   &sync.Mutex{},
 	}
 }
 
@@ -44,10 +43,10 @@ func (this *PipeLine) sendCommand(command [][]byte) (err error) {
 	var buff = encodeCommand(command)
 
 	this.mu.Lock()
-
+	
 	this.count++
 	_, err = this.bw.Write(buff)
-
+	
 	this.mu.Unlock()
 	return
 }
@@ -57,14 +56,14 @@ func (this *PipeLine) Flush() (res []interface{}, err error) {
 	if err != nil {
 		return
 	}
-
+	
 	res = make([]interface{}, 0, this.count)
 	for i := 0; i < this.count; i++ {
 		var info, err = this.decodeCommand()
 		if err != nil {
 			return nil, err
 		}
-
+		
 		res = append(res, info)
 	}
 
@@ -102,17 +101,17 @@ func (this *PipeLine) readLine() (line []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if len(line) > 1 && line[len(line)-2] == '\r' {
+	
+	if len(line) > 1 && line[len(line) - 2] == '\r' {
 		return line, nil
 	}
-
+	
 	return nil, ErrBadPacket
 }
 
 func (this *PipeLine) getCount(line []byte) (num int, err error) {
 	var end = bytes.IndexByte(line, '\r')
-
+	
 	return bytesToInt(line[:end])
 }
 
@@ -122,55 +121,46 @@ func (this *PipeLine) readBulkData(line []byte) (res []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
 	if num == -1 {
 		return line, nil
 	}
-
-	var n int
+	
 	res = make([]byte, num+2)
-	for {
-		n1, err := this.br.Read(res)
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			return nil, err
-		}
-
-		n += n1
+	res, err = this.readLine()
+	if err != nil {
+		return nil, err
 	}
-
-	if n < num {
-		return res[:n], nil
+	
+	if len(res) > num {
+		return res[:num], nil
 	}
-
-	return res[:num], nil
+	
+	return res, nil
 }
 
-func (this *PipeLine) readMultiBulkData(line []byte) (res [][]byte, err error) {
+func (this *PipeLine) readMultiBulkData(line []byte) (res[][]byte, err error){
 	var num int
 	num, err = this.getCount(line)
 	if err != nil {
 		return nil, err
 	}
-
-	res = make([][]byte, num)
+	
+	res = make([][]byte, 0, num+2)
 	for i := 0; i < num; i++ {
 		buff, err := this.decodeCommand()
 		if err != nil {
 			return nil, err
 		}
-
+		
 		if b, ok := buff.([]byte); ok {
 			res = append(res, b)
 		}
-
+		
 		if b1, ok := buff.([][]byte); ok {
-			res = append(res, b1...)
+			res = append(res, b1...)	
 		}
 	}
-
+	
 	return
 }

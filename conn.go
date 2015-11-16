@@ -112,26 +112,17 @@ func (this *Conn) readBulkData(line []byte) (res []byte, err error) {
 		return line, nil
 	}
 	
-	var n int
-	res = make([]byte, num+2)
-	for {
-		n1, err := this.br.Read(res)
-		if err == io.EOF {
-			break
-		}
-		
-		if err != nil {
-			return nil, err
-		}
-		
-		n += n1
+	res = make([]byte, 0, num+2)
+	res, err = this.readLine()
+	if err != nil {
+		return nil, err
 	}
 	
-	if n < num {
-		return res[:n], nil
+	if len(res) > num {
+		return res[:num], nil
 	}
 	
-	return res[:num], nil
+	return res, nil
 }
 
 func (this *Conn) readMultiBulkData(line []byte) (res[][]byte, err error){

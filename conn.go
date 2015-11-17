@@ -68,11 +68,11 @@ func (this *Conn) decodeCommand() (res interface{}, err error) {
 
 	switch line[0] {
 	case '+':
-		res = line[1:]
+		res = line[1:len(line)-2]
 	case '-':
-		res = line[1:]
+		res = line[1:len(line)-2]
 	case ':':
-		res = line[1:]
+		res = line[1:len(line)-2]
 	case '$':
 		res, err = this.readBulkData(line[1:])
 	case '*':

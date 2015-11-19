@@ -2,9 +2,9 @@ package redis
 
 type Transaction struct {
 	Conn
-
+	
 	status int
-	count  int
+	count int
 }
 
 const (
@@ -25,7 +25,7 @@ func (this *Transaction) Multi() error {
 	if err != nil {
 		return err
 	}
-
+	
 	if r, ok := res.([]byte); ok {
 		if string(r) != "OK" {
 			return ErrTransactionBegin
@@ -34,7 +34,7 @@ func (this *Transaction) Multi() error {
 			return nil
 		}
 	}
-
+	
 	return ErrTransactionBegin
 }
 
@@ -43,7 +43,7 @@ func (this *Transaction) Add(command string, args ...interface{}) error {
 	if err != nil {
 		return err
 	}
-
+	
 	if r, ok := res.([]byte); ok {
 		if string(r) != "QUEUED" {
 			return ErrTransactionAdd
@@ -52,7 +52,7 @@ func (this *Transaction) Add(command string, args ...interface{}) error {
 			return nil
 		}
 	}
-
+	
 	return ErrTransactionAdd
 }
 
@@ -61,7 +61,7 @@ func (this *Transaction) Watch(keys ...interface{}) error {
 	if err != nil {
 		return err
 	}
-
+	
 	if r, ok := res.([]byte); ok {
 		if string(r) != "OK" {
 			return ErrWatchKey
@@ -70,7 +70,7 @@ func (this *Transaction) Watch(keys ...interface{}) error {
 			return nil
 		}
 	}
-
+	
 	return ErrWatchKey
 }
 
@@ -79,7 +79,7 @@ func (this *Transaction) UnWatch() error {
 	if err != nil {
 		return err
 	}
-
+	
 	if r, ok := res.([]byte); ok {
 		if string(r) != "OK" {
 			return ErrUnWatchKey
@@ -87,7 +87,7 @@ func (this *Transaction) UnWatch() error {
 			return nil
 		}
 	}
-
+	
 	return ErrUnWatchKey
 }
 
@@ -96,7 +96,7 @@ func (this *Transaction) Discard() error {
 	if err != nil {
 		return err
 	}
-
+	
 	if r, ok := res.([]byte); ok {
 		if string(r) != "OK" {
 			return ErrDiscard
@@ -104,7 +104,7 @@ func (this *Transaction) Discard() error {
 			return nil
 		}
 	}
-
+	
 	return ErrDiscard
 }
 
@@ -113,6 +113,6 @@ func (this *Transaction) Exec() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
 	return res, err
 }

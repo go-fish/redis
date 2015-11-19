@@ -13,8 +13,6 @@ type RedisPool struct {
 
 	Address string
 
-	numClosed uint64
-
 	mu           *sync.Mutex //protects following fields
 	freeConn     []*Conn
 	connRequests []chan *Conn
@@ -68,13 +66,13 @@ func NewRedisPool(maxIdle, maxActive int, address string) (redisPool *RedisPool,
 
 		return
 	}
-
+	
 	return
 }
 
-func (this *RedisPool) SetBufioBuffer(readerBuffer, writerBuffer int) {
-	this.ReaderBuffer = readerBuffer
-	this.WriterBuffer = writerBuffer
+func (this *RedisPool) SetBufioBuffer(readerBufferSize, writerBufferSize int) {
+	this.ReaderBuffer = readerBufferSize
+	this.WriterBuffer = writerBufferSize
 }
 
 func (this *RedisPool) createNewConn() (*Conn, error) {
@@ -152,7 +150,7 @@ func (this *RedisPool) Put(conn *Conn, isBadConn bool) {
 	conn.inUse = false
 
 	if isBadConn || conn.isBadConn {
-		this.maybeOpenNewConnections()
+		this.numOpen--
 		this.mu.Unlock()
 		conn.close()
 		return
@@ -201,25 +199,6 @@ func (this *RedisPool) maxIdleConnsLocked() int {
 		return 0
 	default:
 		return n
-	}
-}
-
-// Assumes db.mu is locked.
-// If there are connRequests and the connection limit hasn't been reached,
-// then tell the connectionOpener to open new connections.
-func (this *RedisPool) maybeOpenNewConnections() {
-	var numRequest = len(this.connRequests) - this.pendingOpens
-	if this.MaxActive > 0 {
-		var numCanOpen = this.MaxActive - (this.numOpen + this.pendingOpens)
-		if numRequest > numCanOpen {
-			numRequest = numCanOpen
-		}
-	}
-
-	for numRequest > 0 {
-		this.pendingOpens++
-		numRequest--
-		this.openerCh <- struct{}{}
 	}
 }
 

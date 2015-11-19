@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"sync"
 	"bytes"
+	"errors"
+	"io"
 )
 
 type PipeLine struct {
@@ -98,6 +100,10 @@ func (this *PipeLine) decodeCommand() (res interface{}, err error) {
 
 func (this *PipeLine) readLine() (line []byte, err error) {
 	line, err = this.br.ReadSlice('\n')
+	if err == bufio.ErrBufferFull {
+		return nil, errors.New("Read Buffer Size Is Too Small")
+	}
+	
 	if err != nil {
 		return nil, err
 	}
@@ -127,16 +133,12 @@ func (this *PipeLine) readBulkData(line []byte) (res []byte, err error) {
 	}
 	
 	res = make([]byte, num+2)
-	res, err = this.readLine()
+	_, err = io.ReadFull(this.br, res)
 	if err != nil {
 		return nil, err
 	}
 	
-	if len(res) > num {
-		return res[:num], nil
-	}
-	
-	return res, nil
+	return res[:num], nil
 }
 
 func (this *PipeLine) readMultiBulkData(line []byte) (res[][]byte, err error){

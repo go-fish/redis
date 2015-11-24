@@ -118,7 +118,7 @@ func (this *Conn) readBulkData(line []byte) (res []byte, err error) {
 	}
 	
 	
-	res = make([]byte, num)
+	res = make([]byte, num+2)
 	_, err = io.ReadFull(this.br, res)
 	if err != nil {
 		return nil, err

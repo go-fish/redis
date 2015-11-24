@@ -1,13 +1,13 @@
 package redis
 
 import (
-	"errors"
 	"bufio"
 	"net"
 	"io"
 	"syscall"
 	"time"
 	"bytes"
+	"errors"
 )
 
 type Conn struct {
@@ -71,7 +71,7 @@ func (this *Conn) decodeCommand() (res interface{}, err error) {
 	case '+':
 		res = line[1:len(line)-2]
 	case '-':
-		res = line[1:len(line)-2]
+		res = errorf(line[1:len(line)-2])
 	case ':':
 		res = line[1:len(line)-2]
 	case '$':
@@ -114,10 +114,11 @@ func (this *Conn) readBulkData(line []byte) (res []byte, err error) {
 	}
 	
 	if num == -1 {
-		return line, nil
+		return nil, nil
 	}
 	
-	res = make([]byte, num+2)
+	
+	res = make([]byte, num)
 	_, err = io.ReadFull(this.br, res)
 	if err != nil {
 		return nil, err

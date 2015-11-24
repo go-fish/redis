@@ -33,6 +33,8 @@ var (
 	endOfLine = []byte{'\r', '\n'}
 )
 
+type RedisError error
+
 func intToBytes(num int) []byte {
 	var buff [32]byte
 	var i = 31
@@ -50,6 +52,14 @@ func intToBytes(num int) []byte {
 }
 
 func bytesToInt(line []byte) (num int, err error) {
+	if len(line) == 0 {
+		return -1, errors.New("Malformed Length")
+	}
+	
+	if line[0] == '-' && line[1] == '1' && len(line) == 2 {
+		return -1, nil
+	}
+	
 	for _, v := range line {
 		num *= 10
 		if v < '0' || v > '9' {
@@ -119,4 +129,8 @@ func encodeCommand(command [][]byte) (buff []byte) {
 	}
 
 	return
+}
+
+func errorf(line []byte) RedisError {
+	return errors.New(string(line))
 }

@@ -85,7 +85,7 @@ func interfaceToBytes(value interface{}) []byte {
 	case int64:
 		return intToBytes(int(value))
 	case float64:
-		var buff = make([]byte, 16)
+		var buff = make([]byte, 0, 16)
 		return strconv.AppendFloat(buff, value, 'g', -1, 64)
 	case bool:
 		if value {

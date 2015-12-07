@@ -105,7 +105,7 @@ func interfaceToBytes(value interface{}) []byte {
 }
 
 func floatToBytes(value float64) []byte {
-	var buff = make([]byte, 16)
+	var buff = make([]byte, 0, 16)
 	return strconv.AppendFloat(buff, value, 'g', -1, 64)
 }
 

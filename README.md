@@ -1,0 +1,1 @@
+![image](https://github.com/HearingFish/redis/blob/master/performance.png)

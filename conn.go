@@ -2,153 +2,172 @@ package redis
 
 import (
 	"bufio"
-	"net"
 	"io"
-	"syscall"
+	"net"
+	"sync/atomic"
 	"time"
-	"bytes"
-	"errors"
 )
 
 type Conn struct {
-	conn net.Conn
-
-	timeout time.Duration
-	timer   *time.Timer
-
-	bw *bufio.Writer
-	br *bufio.Reader
-
-	inUse     bool
-	isBadConn bool
+	pool       *Pool
+	rd         *bufio.Reader
+	wd         net.Conn
+	buff       *item
+	activeTime time.Time
 }
 
-func (this *Conn) close() (err error) {
-	err = this.conn.Close()
-	this = nil
+//create new connection
+func NewConnection(address string) (*Conn, error) {
+	c := new(Conn)
 
-	return
-}
-
-func (this *Conn) redisCommand(command [][]byte) (res interface{}, err error) {
-	err = this.sendCommand(command)
-	if err != nil {
-		return
-	}
-
-	return this.decodeCommand()
-}
-
-func (this *Conn) sendCommand(command [][]byte) (err error) {
-	var buff = encodeCommand(command)
-
-	_, err = this.bw.Write(buff)
-	if err != nil {
-		return
-	}
-
-	return this.flush()
-}
-
-func (this *Conn) flush() (err error) {
-	err = this.bw.Flush()
-	if err == syscall.EPIPE || err == io.EOF {
-		this.isBadConn = true
-	}
-
-	return
-}
-
-func (this *Conn) decodeCommand() (res interface{}, err error) {
-	var line []byte
-
-	line, err = this.readLine()
+	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		return nil, err
 	}
 
-	switch line[0] {
+	tcpConn, ok := conn.(*net.TCPConn)
+	if !ok {
+		return nil, ErrTCPConn
+	}
+
+	if err = tcpConn.SetKeepAlive(true); err != nil {
+		return nil, err
+	}
+
+	c.buff = newItem()
+	c.rd = bufio.NewReaderSize(conn, 1024)
+	c.wd = conn
+
+	return c, nil
+}
+
+//close connection
+func (c *Conn) Close() {
+	c.wd.Close()
+	c.rd = nil
+
+	//give back buff
+	if c.pool != nil {
+		c.pool.buff.put(c.buff)
+
+		//release opennum && send signal to cond
+		atomic.AddInt32(&c.pool.openNum, -1)
+		c.pool.cond.Signal()
+	}
+}
+
+//exec
+func (c *Conn) exec(data []byte) (interface{}, error) {
+	//write command
+	if _, err := c.wd.Write(data); err != nil {
+		//reset buff
+		c.buff.reset()
+		return nil, err
+	}
+
+	//reset buff
+	c.buff.reset()
+
+	//read result
+	return c.readResult()
+}
+
+//read result
+func (c *Conn) readResult() (interface{}, error) {
+	data, _, err := c.rd.ReadLine()
+	if err != nil {
+		return nil, err
+	}
+
+	switch data[0] {
 	case '+':
-		res = line[1:len(line)-2]
+
+		switch {
+		case len(data) == 3 && data[1] == 'O' && data[2] == 'K':
+			return true, nil
+
+		case len(data) == 5 && data[1] == 'P' && data[2] == 'O' && data[3] == 'N' && data[4] == 'G':
+			return true, nil
+
+		default:
+			return data[1:], nil
+		}
+
 	case '-':
-		res = errorf(line[1:len(line)-2])
+		return nil, &RedisError{data: data[1:]}
+
 	case ':':
-		res = line[1:len(line)-2]
+		return c.bytesToInt(data[1:])
+
 	case '$':
-		res, err = this.readBulkData(line[1:])
+		count, err := c.bytesToInt(data[1:])
+		if err != nil || count < 0 {
+			return nil, err
+		}
+
+		if count == 0 {
+			return nil, nil
+		}
+
+		return c.readBulk(count)
+
 	case '*':
-		res, err = this.readMultiBulkData(line[1:])
-	}
+		count, err := c.bytesToInt(data[1:])
+		if err != nil || count < 0 {
+			return nil, err
+		}
 
-	return
+		if count == 0 {
+			return nil, nil
+		}
+
+		return c.readMultiBulk(count)
+
+	default:
+		return nil, ErrUnknownResult
+	}
 }
 
-func (this *Conn) readLine() (line []byte, err error) {
-	line, err = this.br.ReadSlice('\n')
-	if err == bufio.ErrBufferFull {
-		return nil, errors.New("Read Buffer Size Is Too Small")
-	}
-	
-	if err != nil {
+//read bulk
+func (c *Conn) readBulk(count int) ([]byte, error) {
+	data := c.buff.next(count)
+
+	if _, err := io.ReadFull(c.rd, data); err != nil {
 		return nil, err
 	}
-	
-	if len(line) > 1 && line[len(line) - 2] == '\r' {
-		return line, nil
+
+	//skip \r\n
+	if _, _, err := c.rd.ReadLine(); err != nil {
+		return nil, err
 	}
-	
-	return nil, ErrBadPacket
+
+	return data, nil
 }
 
-func (this *Conn) getCount(line []byte) (num int, err error) {
-	var end = bytes.IndexByte(line, '\r')
-	
-	return bytesToInt(line[:end])
-}
+//read multi bulk
+func (c *Conn) readMultiBulk(count int) ([][]byte, error) {
+	res := make([][]byte, count)
 
-func (this *Conn) readBulkData(line []byte) (res []byte, err error) {
-	var num int
-	num, err = this.getCount(line)
-	if err != nil {
-		return nil, err
-	}
-	
-	if num == -1 {
-		return nil, nil
-	}
-	
-	
-	res = make([]byte, num+2)
-	_, err = io.ReadFull(this.br, res)
-	if err != nil {
-		return nil, err
-	}
-	
-	return res[:num], nil
-}
-
-func (this *Conn) readMultiBulkData(line []byte) (res[][]byte, err error){
-	var num int
-	num, err = this.getCount(line)
-	if err != nil {
-		return nil, err
-	}
-	
-	res = make([][]byte, 0, num)
-	for i := 0; i < num; i++ {
-		buff, err := this.decodeCommand()
+	for i := 0; i < count; i++ {
+		data, _, err := c.rd.ReadLine()
 		if err != nil {
 			return nil, err
 		}
-		
-		if b, ok := buff.([]byte); ok {
-			res = append(res, b)
+
+		size, err := c.bytesToInt(data[1:])
+		if err != nil {
+			return nil, err
 		}
-		
-		if b1, ok := buff.([][]byte); ok {
-			res = append(res, b1...)	
+
+		if size < 0 {
+			res[i] = nil
+			continue
+		}
+
+		if res[i], err = c.readBulk(size); err != nil {
+			return nil, err
 		}
 	}
-	
-	return
+
+	return res, nil
 }

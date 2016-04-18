@@ -1,0 +1,31 @@
+#
+# Please see:
+# http://www.cnblogs.com/getong/archive/2013/04/01/2993139.html
+#
+
+png(filename="redis-mem-benchmarks.png",width=1400, height=900)
+Sys.setlocale(, "en_US.UTF-8")
+oldpar <- par(lwd=4)
+AlphazeroRedis <- read.table("AlphazeroRedis.mem.tmp")
+GaryburdRedigo <- read.table("GaryburdRedigo.mem.tmp")
+GosexyRedis <- read.table("GosexyRedis.mem.tmp")
+Simonz05Godis <- read.table("Simonz05Godis.mem.tmp")
+FishRedis <- read.table("FishRedis.mem.tmp")
+plot(AlphazeroRedis$V1, type="o", ylim = c(0, 5000), col = "black", axes=FALSE, ann=FALSE)
+text(2, AlphazeroRedis$V1[2], cex=2, pos=3, col="black", "AlphazeroRedis")
+axis(1, at=1:8, lab=c("Ping","Set","Get","Incr", "LPush", "LRange10", "LRange100", ""))
+axis(2, las=0, at=200*0: 5000)
+box()
+title(xlab="Operation", col = "black")
+title(ylab="B/op", col = "black")
+title(main = "Go drivers for redis")
+lines(GaryburdRedigo, col = "red")
+text(6, GaryburdRedigo$V1[6], cex=2, pos=1, col="red", "GaryburdRedigo")
+lines(GosexyRedis, col = "blue")
+text(2, GosexyRedis$V1[2], pos=1,col="blue", cex=2, "GosexyRedis")
+lines(Simonz05Godis, col = "yellow")
+text(4, Simonz05Godis$V1[4],pos=3, col="yellow",cex=2, "Simonz05Godis")
+lines(FishRedis, col = "gray")
+text(3, FishRedis$V1[3],pos=1,cex=2, col="gray", "FishRedis")
+par(oldpar)
+dev.off()

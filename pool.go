@@ -4,231 +4,150 @@ import (
 	"bufio"
 	"net"
 	"sync"
+	"sync/atomic"
+	"time"
 )
 
-type Factory func() (net.Conn, error)
-
-type RedisPool struct {
-	conn *Conn
-
-	Address string
-
-	mu           *sync.Mutex //protects following fields
-	freeConn     []*Conn
-	connRequests []chan *Conn
-	numOpen      int
-	pendingOpens int
-
-	openerCh chan struct{}
-	closed   bool
-
-	MaxIdle   int
-	MaxActive int
-
-	ReaderBuffer int
-	WriterBuffer int
-
-	factory Factory
+type Pool struct {
+	address           string
+	maxConnection     int32
+	maxIdleConnection int32
+	openNum           int32
+	maxIdleTimeout    time.Duration
+	idleConns         chan *Conn
+	buff              *buffer
+	cond              *sync.Cond
+	state             int32
 }
 
-const (
-	defaultReaderBuffer = 4096
-	defaultWriterBuffer = 4096
-)
-
-var connectionRequestQueueSize = 1000000
-
-func NewRedisPool(maxIdle, maxActive int, address string) (redisPool *RedisPool, err error) {
-	redisPool = &RedisPool{
-		MaxActive: maxActive,
-		MaxIdle:   maxIdle,
-		Address:   address,
-
-		openerCh:     make(chan struct{}, connectionRequestQueueSize),
-		ReaderBuffer: defaultReaderBuffer,
-		WriterBuffer: defaultWriterBuffer,
-
-		mu: &sync.Mutex{},
+func Open(address string, maxConnection, maxIdleConnection int, maxIdleTimeout time.Duration) (*Pool, error) {
+	p := &Pool{
+		address:           address,
+		maxConnection:     int32(maxConnection),
+		maxIdleConnection: int32(maxIdleConnection),
+		maxIdleTimeout:    maxIdleTimeout,
+		idleConns:         make(chan *Conn, maxConnection),
+		buff:              newBuffer(maxIdleConnection, maxConnection),
+		state:             1,
+		cond:              sync.NewCond(new(sync.Mutex)),
 	}
 
-	redisPool.factory = func() (nc net.Conn, err error) {
-		nc, err = net.Dial("tcp", redisPool.Address)
+	//init pool
+	for i := 0; i < maxIdleConnection; i++ {
+		c, err := p.newConnection()
 		if err != nil {
-			return
+			return nil, err
 		}
 
-		if tc, ok := nc.(*net.TCPConn); ok {
-			err = tc.SetKeepAlive(true)
-			if err != nil {
-				return
+		p.PutConnection(c)
+	}
+
+	p.openNum = int32(maxIdleConnection)
+	return p, nil
+}
+
+//new connection
+func (p *Pool) newConnection() (*Conn, error) {
+	c := new(Conn)
+
+	conn, err := net.Dial("tcp", p.address)
+	if err != nil {
+		return nil, err
+	}
+
+	tcpConn, ok := conn.(*net.TCPConn)
+	if !ok {
+		return nil, ErrTCPConn
+	}
+
+	if err = tcpConn.SetKeepAlive(true); err != nil {
+		return nil, err
+	}
+
+	c.pool = p
+	c.buff = p.buff.get()
+	c.rd = bufio.NewReaderSize(conn, 1024)
+	c.wd = conn
+
+	return c, nil
+}
+
+//get
+func (p *Pool) GetConnection() (*Conn, error) {
+	for {
+		if atomic.LoadInt32(&p.state) == 0 {
+			return nil, ErrPoolClosed
+		}
+
+		now := time.Now()
+		for 0 < len(p.idleConns) {
+			conn := <-p.idleConns
+			if conn != nil && conn.activeTime.Add(p.maxIdleTimeout).After(now) {
+				return conn, nil
 			}
+
+			//close timeout connection
+			conn.Close()
 		}
 
-		return
+		//create new connection
+		if p.openNum <= p.maxConnection {
+			conn, err := p.newConnection()
+			if err != nil {
+				return nil, err
+			}
+
+			atomic.AddInt32(&p.openNum, 1)
+			return conn, nil
+		}
+
+		//wait free connection
+		p.cond.L.Lock()
+		for 0 == len(p.idleConns) || p.openNum > p.maxConnection {
+			p.cond.Wait()
+		}
+		p.cond.L.Unlock()
 	}
-	
-	return
 }
 
-func (this *RedisPool) SetBufioBuffer(readerBufferSize, writerBufferSize int) {
-	this.ReaderBuffer = readerBufferSize
-	this.WriterBuffer = writerBufferSize
-}
-
-func (this *RedisPool) createNewConn() (*Conn, error) {
-	conn, err := this.factory()
-	if err != nil {
-		return nil, err
-	}
-
-	return &Conn{
-		conn: conn,
-
-		bw: bufio.NewWriterSize(conn, this.WriterBuffer),
-		br: bufio.NewReaderSize(conn, this.ReaderBuffer),
-	}, nil
-}
-
-func (this *RedisPool) Get() (*Conn, error) {
-	return this.get()
-}
-
-func (this *RedisPool) get() (*Conn, error) {
-	this.mu.Lock()
-	if this.closed {
-		this.mu.Unlock()
-		return nil, ErrClosed
-	}
-
-	var numFree = len(this.freeConn)
-	if numFree > 0 {
-		var conn = this.freeConn[0]
-		copy(this.freeConn, this.freeConn[1:])
-		this.freeConn = this.freeConn[:numFree-1]
-		conn.inUse = true
-		this.mu.Unlock()
-
-		return conn, nil
-	}
-
-	//wait for free connection
-	if this.MaxActive > 0 && this.numOpen >= this.MaxActive {
-		var req = make(chan *Conn, 1)
-		this.connRequests = append(this.connRequests, req)
-		this.mu.Unlock()
-
-		var ret = <-req
-
-		return ret, nil
-	}
-
-	this.numOpen++
-	this.mu.Unlock()
-
-	conn, err := this.createNewConn()
-	if err != nil {
-		this.mu.Lock()
-		this.numOpen--
-		this.mu.Unlock()
-
-		return nil, err
-	}
-
-	this.mu.Lock()
-	conn.inUse = true
-	this.mu.Unlock()
-
-	return conn, nil
-}
-
-func (this *RedisPool) Put(conn *Conn, isBadConn bool) {
-	this.mu.Lock()
-	if !conn.inUse {
-		panic("connection returned that was never out")
-	}
-
-	conn.inUse = false
-
-	if isBadConn || conn.isBadConn {
-		this.numOpen--
-		this.mu.Unlock()
-		conn.close()
+//put
+func (p *Pool) PutConnection(conn *Conn) {
+	if atomic.LoadInt32(&p.state) == 0 {
 		return
 	}
 
-	var added = this.putConnDBLocked(conn, isBadConn)
-	this.mu.Unlock()
-
-	if !added {
-		conn.close()
-	}
-}
-
-func (this *RedisPool) putConnDBLocked(conn *Conn, isBadConn bool) bool {
-	if this.MaxActive > 0 && this.numOpen > this.MaxActive {
-		return false
+	if p.idleConns == nil {
+		conn.Close()
+		return
 	}
 
-	if c := len(this.connRequests); c > 0 {
-		var req = this.connRequests[0]
-		copy(this.connRequests, this.connRequests[1:])
-		this.connRequests = this.connRequests[:c-1]
+	//put connection to channel
+	conn.activeTime = time.Now()
+	select {
+	case p.idleConns <- conn:
+		p.cond.Signal()
+		return
 
-		if !isBadConn && !conn.isBadConn {
-			conn.inUse = true
-		}
-
-		req <- conn
-		return true
-	} else if !isBadConn && !conn.isBadConn && !this.closed && this.maxIdleConnsLocked() > len(this.freeConn) {
-		this.freeConn = append(this.freeConn, conn)
-		return true
-	}
-
-	return false
-}
-
-const defaultMaxIdleConns = 2
-
-func (this *RedisPool) maxIdleConnsLocked() int {
-	var n = this.MaxIdle
-	switch {
-	case n == 0:
-		return defaultMaxIdleConns
-	case n < 0:
-		return 0
 	default:
-		return n
+		conn.Close()
+		return
 	}
 }
 
-func (this *RedisPool) Close() error {
-	this.mu.Lock()
-	if this.closed {
-		this.mu.Unlock()
-		return nil
-	}
+//close
+func (p *Pool) Close() {
+	//change pool's state
+	atomic.StoreInt32(&p.state, 0)
 
-	close(this.openerCh)
-	var err error
-	var fns = make([]func() error, 0, len(this.freeConn))
-	for _, conn := range this.freeConn {
-		fns = append(fns, conn.close)
+	//close all connections
+	for conn := range p.idleConns {
+		conn.Close()
 	}
+	close(p.idleConns)
 
-	this.freeConn = nil
-	this.closed = true
-	for _, req := range this.connRequests {
-		close(req)
-	}
-	this.mu.Unlock()
+	//free all wait connection
+	p.cond.Broadcast()
 
-	for _, fn := range fns {
-		var err1 = fn()
-		if err1 != nil {
-			err = err1
-		}
-	}
-
-	return err
+	//release buffer
+	p.buff = nil
 }

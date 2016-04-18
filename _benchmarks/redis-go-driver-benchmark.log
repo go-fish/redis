@@ -1,0 +1,41 @@
+PASS
+BenchmarkAlphazeroRedisPing-4     	  100000	     37832 ns/op	     351 B/op	       8 allocs/op
+BenchmarkAlphazeroRedisSet-4      	   50000	     42822 ns/op	     542 B/op	      15 allocs/op
+BenchmarkAlphazeroRedisGet-4      	  100000	     46442 ns/op	     479 B/op	      13 allocs/op
+BenchmarkAlphazeroRedisIncr-4     	  100000	     43332 ns/op	     463 B/op	      12 allocs/op
+BenchmarkAlphazeroRedisLPush-4    	  100000	     43692 ns/op	     543 B/op	      15 allocs/op
+BenchmarkAlphazeroRedisLRange10-4 	   50000	     50742 ns/op	    1439 B/op	      52 allocs/op
+BenchmarkAlphazeroRedisLRange100-4	   30000	    102105 ns/op	    8031 B/op	     322 allocs/op
+
+BenchmarkGaryburdRedigoPing-4     	   50000	     46922 ns/op	      15 B/op	       0 allocs/op
+BenchmarkGaryburdRedigoSet-4      	  100000	     43152 ns/op	      79 B/op	       3 allocs/op
+BenchmarkGaryburdRedigoGet-4      	  100000	     32681 ns/op	      95 B/op	       4 allocs/op
+BenchmarkGaryburdRedigoIncr-4     	  100000	     34911 ns/op	      63 B/op	       3 allocs/op
+BenchmarkGaryburdRedigoLPush-4    	  100000	     39072 ns/op	      95 B/op	       4 allocs/op
+BenchmarkGaryburdRedigoLRange10-4 	   50000	     49782 ns/op	     847 B/op	      28 allocs/op
+BenchmarkGaryburdRedigoLRange100-4	   30000	     98472 ns/op	    6655 B/op	     208 allocs/op
+
+BenchmarkGosexyRedisPing-4        	  100000	     41952 ns/op	     495 B/op	      15 allocs/op
+BenchmarkGosexyRedisSet-4         	   50000	     46502 ns/op	     751 B/op	      23 allocs/op
+BenchmarkGosexyRedisGet-4         	  100000	     42462 ns/op	     655 B/op	      21 allocs/op
+BenchmarkGosexyRedisIncr-4        	  100000	     42182 ns/op	     622 B/op	      19 allocs/op
+BenchmarkGosexyRedisLPush-4       	  100000	     42292 ns/op	     830 B/op	      24 allocs/op
+BenchmarkGosexyRedisLRange10-4    	   50000	     64623 ns/op	    4415 B/op	     107 allocs/op
+BenchmarkGosexyRedisLRange100-4   	   20000	    151808 ns/op	   32624 B/op	     737 allocs/op
+
+BenchmarkFishRedisPing-4          	  100000	     32141 ns/op	      31 B/op	       1 allocs/op
+BenchmarkFishRedisSet-4           	  100000	     34431 ns/op	      47 B/op	       2 allocs/op
+BenchmarkFishRedisGet-4           	  100000	     29941 ns/op	      15 B/op	       0 allocs/op
+BenchmarkFishRedisIncr-4          	  100000	     34201 ns/op	      31 B/op	       1 allocs/op
+BenchmarkFishRedisLPush-4         	  100000	     32351 ns/op	      47 B/op	       2 allocs/op
+BenchmarkFishRedisLRange10-4      	  100000	     34291 ns/op	      15 B/op	       0 allocs/op
+BenchmarkFishRedisLRange100-4     	  100000	     35082 ns/op	      14 B/op	       0 allocs/op
+
+BenchmarkSimonz05GodisPing-4      	  100000	     36352 ns/op	     351 B/op	       7 allocs/op
+BenchmarkSimonz05GodisSet-4       	  100000	     41122 ns/op	     543 B/op	      15 allocs/op
+BenchmarkSimonz05GodisGet-4       	  100000	     44682 ns/op	     463 B/op	      12 allocs/op
+BenchmarkSimonz05GodisIncr-4      	   50000	     65323 ns/op	     447 B/op	      11 allocs/op
+BenchmarkSimonz05GodisLPush-4     	   50000	     40762 ns/op	     560 B/op	      16 allocs/op
+BenchmarkSimonz05GodisLRange10-4  	   50000	     54483 ns/op	    2095 B/op	      62 allocs/op
+BenchmarkSimonz05GodisLRange100-4 	   30000	    111873 ns/op	   14416 B/op	     422 allocs/op
+ok  	github.com/HearingFish/redis/_benchmarks	140.400s

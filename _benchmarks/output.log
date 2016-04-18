@@ -1,0 +1,27 @@
+
+R version 3.2.4 Revised (2016-03-16 r70336) -- "Very Secure Dishes"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+
+R是自由软件，不带任何担保。
+在某些条件下你可以将其自由散布。
+用'license()'或'licence()'来看散布的详细条件。
+
+R是个合作计划，有许多人为之做出了贡献.
+用'contributors()'来看合作者的详细情况
+用'citation()'会告诉你如何在出版物中正确地引用R或R程序包。
+
+用'demo()'来看一些示范程序，用'help()'来阅读在线帮助文件，或
+用'help.start()'通过HTML浏览器来看帮助文件。
+用'q()'退出R.
+
+> #
+> # Please see:
+> # http://www.cnblogs.com/getong/archive/2013/04/01/2993139.html
+> #
+> 
+> png(filename="redis-alloc-benchmarks.png",width=1400, height=900)
+> Sys.setlocale(, "en_US.UTF-8")
+[1] ""
+> oldpar <- par(lwd=4)
+> AlphazeroRedis <- read.table("AlphazeroRedisalloc.tmp")

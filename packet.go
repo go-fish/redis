@@ -5225,3 +5225,93 @@ func (c *Conn) Zscan(key string, cursor int64, arguments ...interface{}) ([][]by
 
 	return BytesArray(c.exec(data[:offset]))
 }
+
+/******** PIPELINE ********/
+func (c *Conn) Pipeline() {
+	if c.pipeline == nil {
+		c.pipeline = make([]byte, 0, 1024)
+	} else {
+		c.pipeline = c.pipeline[:0]
+	}
+
+	c.count = 0
+}
+
+//add command to pipeline
+func (c *Conn) Add(command string, argvs ...interface{}) {
+	data := c.buff.next(1024)
+
+	size := len(argvs) + 1
+	data[0] = '*'
+	offset := 1
+	offset += copy(data[offset:], c.intToBytes(size))
+	data[offset] = '\r'
+	data[offset+1] = '\n'
+	offset += 2
+
+	//command
+	data[offset] = '$'
+	offset++
+	offset += copy(data[offset:], c.intToBytes(len(command)))
+	data[offset] = '\r'
+	data[offset+1] = '\n'
+	offset += 2
+	offset += copy(data[offset:], command)
+	data[offset] = '\r'
+	data[offset+1] = '\n'
+	offset += 2
+
+	//argvs
+	for i := 0; i < len(argvs); i++ {
+		data[offset] = '$'
+		offset++
+
+		b := c.interfaceToBytes(argvs[i])
+		offset += copy(data[offset:], c.intToBytes(len(b)))
+		data[offset] = '\r'
+		data[offset+1] = '\n'
+		offset += 2
+
+		offset += copy(data[offset:], b)
+		data[offset] = '\r'
+		data[offset+1] = '\n'
+		offset += 2
+
+		data = c.checkBuffer(offset, data)
+	}
+
+	c.pipeline = append(c.pipeline, data[:offset]...)
+	c.count++
+	c.buff.reset()
+}
+
+//flush commands to redis
+func (c *Conn) Flush() ([]interface{}, error) {
+	//write command
+	_, err := c.wd.Write(c.pipeline)
+	if err != nil {
+		//reset buff
+		c.buff.reset()
+		if c.pipeline != nil {
+			c.pipeline = c.pipeline[:0]
+		}
+
+		return nil, err
+	}
+
+	//reset buff
+	c.buff.reset()
+	if c.pipeline != nil {
+		c.pipeline = c.pipeline[:0]
+	}
+
+	res := make([]interface{}, c.count)
+	for i := 0; i < c.count; i++ {
+		res[i], err = c.readResult()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return res, nil
+}

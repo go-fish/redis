@@ -9,10 +9,15 @@ import (
 )
 
 type Conn struct {
-	pool       *Pool
-	rd         *bufio.Reader
-	wd         net.Conn
-	buff       *item
+	pool *Pool
+	rd   *bufio.Reader
+	wd   net.Conn
+	buff *item
+
+	//pipeline
+	pipeline []byte
+	count    int
+
 	activeTime time.Time
 }
 
@@ -62,11 +67,18 @@ func (c *Conn) exec(data []byte) (interface{}, error) {
 	if _, err := c.wd.Write(data); err != nil {
 		//reset buff
 		c.buff.reset()
+		if c.pipeline != nil {
+			c.resetPipeline()
+		}
+
 		return nil, err
 	}
 
 	//reset buff
 	c.buff.reset()
+	if c.pipeline != nil {
+		c.resetPipeline()
+	}
 
 	//read result
 	return c.readResult()
@@ -74,6 +86,9 @@ func (c *Conn) exec(data []byte) (interface{}, error) {
 
 //read result
 func (c *Conn) readResult() (interface{}, error) {
+	//reset buff
+	defer c.buff.reset()
+
 	data, _, err := c.rd.ReadLine()
 	if err != nil {
 		return nil, err
@@ -170,4 +185,9 @@ func (c *Conn) readMultiBulk(count int) ([][]byte, error) {
 	}
 
 	return res, nil
+}
+
+func (c *Conn) resetPipeline() {
+	c.pipeline = c.pipeline[:0]
+	c.count = 0
 }

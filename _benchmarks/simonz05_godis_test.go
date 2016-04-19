@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/simonz05/godis/redis"
 	"testing"
+
+	"github.com/simonz05/godis/redis"
 )
 
 var simonz05GodisClient *redis.Client
@@ -94,6 +95,17 @@ func BenchmarkSimonz05GodisLRange100(b *testing.B) {
 	var err error
 	for i := 0; i < b.N; i++ {
 		_, err = simonz05GodisClient.Lrange("hello", 0, 100)
+		if err != nil {
+			b.Fatalf(err.Error())
+			break
+		}
+	}
+}
+
+func BenchmarkSimonz05GodisLRange1000(b *testing.B) {
+	var err error
+	for i := 0; i < b.N; i++ {
+		_, err = simonz05GodisClient.Lrange("hello", 0, 1000)
 		if err != nil {
 			b.Fatalf(err.Error())
 			break

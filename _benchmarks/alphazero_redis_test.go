@@ -1,9 +1,10 @@
 package main
 
 import (
+	"testing"
+
 	redis "github.com/alphazero/Go-Redis"
 	"menteslibres.net/gosexy/to"
-	"testing"
 )
 
 var alphazeroRedisClient redis.Client
@@ -102,6 +103,17 @@ func BenchmarkAlphazeroRedisLRange100(b *testing.B) {
 	var err error
 	for i := 0; i < b.N; i++ {
 		_, err = alphazeroRedisClient.Lrange("hello", 0, 100)
+		if err != nil {
+			b.Fatalf(err.Error())
+			break
+		}
+	}
+}
+
+func BenchmarkAlphazeroRedisLRange1000(b *testing.B) {
+	var err error
+	for i := 0; i < b.N; i++ {
+		_, err = alphazeroRedisClient.Lrange("hello", 0, 1000)
 		if err != nil {
 			b.Fatalf(err.Error())
 			break

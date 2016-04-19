@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/garyburd/redigo/redis"
 	"testing"
+
+	"github.com/garyburd/redigo/redis"
 )
 
 var garyburdRedigoClient redis.Conn
@@ -101,6 +102,17 @@ func BenchmarkGaryburdRedigoLRange100(b *testing.B) {
 	var err error
 	for i := 0; i < b.N; i++ {
 		_, err = garyburdRedigoClient.Do("LRANGE", "hello", 0, 100)
+		if err != nil {
+			b.Fatalf(err.Error())
+			break
+		}
+	}
+}
+
+func BenchmarkGaryburdRedigoLRange1000(b *testing.B) {
+	var err error
+	for i := 0; i < b.N; i++ {
+		_, err = garyburdRedigoClient.Do("LRANGE", "hello", 0, 1000)
 		if err != nil {
 			b.Fatalf(err.Error())
 			break

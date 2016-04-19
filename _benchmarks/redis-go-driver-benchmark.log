@@ -1,41 +1,46 @@
 PASS
-BenchmarkAlphazeroRedisPing-4     	  100000	     39982 ns/op	     351 B/op	       8 allocs/op
-BenchmarkAlphazeroRedisSet-4      	  100000	     48692 ns/op	     543 B/op	      15 allocs/op
-BenchmarkAlphazeroRedisGet-4      	   50000	     43622 ns/op	     479 B/op	      13 allocs/op
-BenchmarkAlphazeroRedisIncr-4     	  100000	     39972 ns/op	     463 B/op	      12 allocs/op
-BenchmarkAlphazeroRedisLPush-4    	  100000	     44482 ns/op	     543 B/op	      15 allocs/op
-BenchmarkAlphazeroRedisLRange10-4 	   50000	     56343 ns/op	    1439 B/op	      52 allocs/op
-BenchmarkAlphazeroRedisLRange100-4	   30000	    105806 ns/op	    8031 B/op	     322 allocs/op
+BenchmarkAlphazeroRedisPing-4      	  100000	     37002 ns/op	     351 B/op	       8 allocs/op
+BenchmarkAlphazeroRedisSet-4       	  100000	     41982 ns/op	     543 B/op	      15 allocs/op
+BenchmarkAlphazeroRedisGet-4       	  100000	     49912 ns/op	     479 B/op	      13 allocs/op
+BenchmarkAlphazeroRedisIncr-4      	  100000	     40472 ns/op	     463 B/op	      12 allocs/op
+BenchmarkAlphazeroRedisLPush-4     	  100000	     40982 ns/op	     543 B/op	      15 allocs/op
+BenchmarkAlphazeroRedisLRange10-4  	   50000	     52102 ns/op	    1439 B/op	      52 allocs/op
+BenchmarkAlphazeroRedisLRange100-4 	   30000	    110339 ns/op	    8031 B/op	     322 allocs/op
+BenchmarkAlphazeroRedisLRange1000-4	   10000	    443125 ns/op	   73248 B/op	    3022 allocs/op
 
-BenchmarkGaryburdRedigoPing-4     	   50000	     42522 ns/op	      13 B/op	       0 allocs/op
-BenchmarkGaryburdRedigoSet-4      	  100000	     35572 ns/op	      79 B/op	       3 allocs/op
-BenchmarkGaryburdRedigoGet-4      	  100000	     36472 ns/op	      95 B/op	       4 allocs/op
-BenchmarkGaryburdRedigoIncr-4     	  100000	     37172 ns/op	      63 B/op	       3 allocs/op
-BenchmarkGaryburdRedigoLPush-4    	  100000	     41102 ns/op	      95 B/op	       4 allocs/op
-BenchmarkGaryburdRedigoLRange10-4 	  100000	     48052 ns/op	     847 B/op	      28 allocs/op
-BenchmarkGaryburdRedigoLRange100-4	   30000	    103139 ns/op	    6655 B/op	     208 allocs/op
+BenchmarkGaryburdRedigoPing-4      	  100000	     34931 ns/op	      14 B/op	       0 allocs/op
+BenchmarkGaryburdRedigoSet-4       	  100000	     39842 ns/op	      75 B/op	       3 allocs/op
+BenchmarkGaryburdRedigoGet-4       	  100000	     35402 ns/op	      94 B/op	       4 allocs/op
+BenchmarkGaryburdRedigoIncr-4      	  100000	     33771 ns/op	      63 B/op	       3 allocs/op
+BenchmarkGaryburdRedigoLPush-4     	  100000	     35992 ns/op	      95 B/op	       4 allocs/op
+BenchmarkGaryburdRedigoLRange10-4  	  100000	     52232 ns/op	     847 B/op	      28 allocs/op
+BenchmarkGaryburdRedigoLRange100-4 	   30000	    103005 ns/op	    6655 B/op	     208 allocs/op
+BenchmarkGaryburdRedigoLRange1000-4	   10000	    410523 ns/op	   64576 B/op	    2008 allocs/op
 
-BenchmarkGosexyRedisPing-4        	   50000	     44302 ns/op	     494 B/op	      15 allocs/op
-BenchmarkGosexyRedisSet-4         	  100000	     46762 ns/op	     751 B/op	      23 allocs/op
-BenchmarkGosexyRedisGet-4         	   50000	     54023 ns/op	     655 B/op	      21 allocs/op
-BenchmarkGosexyRedisIncr-4        	  100000	     48152 ns/op	     623 B/op	      19 allocs/op
-BenchmarkGosexyRedisLPush-4       	   50000	     50162 ns/op	     831 B/op	      24 allocs/op
-BenchmarkGosexyRedisLRange10-4    	   50000	     61223 ns/op	    4415 B/op	     107 allocs/op
-BenchmarkGosexyRedisLRange100-4   	   20000	    155008 ns/op	   32624 B/op	     737 allocs/op
+BenchmarkGosexyRedisPing-4         	   50000	     46202 ns/op	     495 B/op	      15 allocs/op
+BenchmarkGosexyRedisSet-4          	  100000	     47062 ns/op	     751 B/op	      23 allocs/op
+BenchmarkGosexyRedisGet-4          	  100000	     50102 ns/op	     655 B/op	      21 allocs/op
+BenchmarkGosexyRedisIncr-4         	   50000	     52002 ns/op	     623 B/op	      19 allocs/op
+BenchmarkGosexyRedisLPush-4        	  100000	     50742 ns/op	     831 B/op	      24 allocs/op
+BenchmarkGosexyRedisLRange10-4     	   50000	     66843 ns/op	    4415 B/op	     107 allocs/op
+BenchmarkGosexyRedisLRange100-4    	   20000	    161759 ns/op	   32624 B/op	     737 allocs/op
+BenchmarkGosexyRedisLRange1000-4   	    3000	    931719 ns/op	  313843 B/op	    7038 allocs/op
 
-BenchmarkFishRedisPing-4          	  100000	     35712 ns/op	      31 B/op	       1 allocs/op
-BenchmarkFishRedisSet-4           	  100000	     35692 ns/op	      47 B/op	       2 allocs/op
-BenchmarkFishRedisGet-4           	  100000	     36452 ns/op	      15 B/op	       0 allocs/op
-BenchmarkFishRedisIncr-4          	  100000	     36842 ns/op	      31 B/op	       1 allocs/op
-BenchmarkFishRedisLPush-4         	  100000	     35812 ns/op	      47 B/op	       2 allocs/op
-BenchmarkFishRedisLRange10-4      	  100000	     36992 ns/op	      15 B/op	       0 allocs/op
-BenchmarkFishRedisLRange100-4     	  100000	     35062 ns/op	      15 B/op	       0 allocs/op
+BenchmarkFishRedisPing-4           	  100000	     35932 ns/op	      31 B/op	       1 allocs/op
+BenchmarkFishRedisSet-4            	  100000	     35892 ns/op	      46 B/op	       2 allocs/op
+BenchmarkFishRedisGet-4            	  100000	     35352 ns/op	      14 B/op	       0 allocs/op
+BenchmarkFishRedisIncr-4           	  100000	     40932 ns/op	      29 B/op	       1 allocs/op
+BenchmarkFishRedisLPush-4          	  100000	     37192 ns/op	      47 B/op	       2 allocs/op
+BenchmarkFishRedisLRange10-4       	  100000	     39172 ns/op	      12 B/op	       0 allocs/op
+BenchmarkFishRedisLRange100-4      	  100000	     36182 ns/op	      15 B/op	       0 allocs/op
+BenchmarkFishRedisLRange1000-4     	  100000	     40532 ns/op	      15 B/op	       0 allocs/op
 
-BenchmarkSimonz05GodisPing-4      	  100000	     36752 ns/op	     351 B/op	       7 allocs/op
-BenchmarkSimonz05GodisSet-4       	  100000	     44622 ns/op	     543 B/op	      15 allocs/op
-BenchmarkSimonz05GodisGet-4       	  100000	     43262 ns/op	     463 B/op	      12 allocs/op
-BenchmarkSimonz05GodisIncr-4      	  100000	     46022 ns/op	     447 B/op	      11 allocs/op
-BenchmarkSimonz05GodisLPush-4     	  100000	     50862 ns/op	     559 B/op	      16 allocs/op
-BenchmarkSimonz05GodisLRange10-4  	   50000	     52983 ns/op	    2095 B/op	      62 allocs/op
-BenchmarkSimonz05GodisLRange100-4 	   30000	    118606 ns/op	   14415 B/op	     422 allocs/op
-ok  	github.com/HearingFish/redis/_benchmarks	150.270s
+BenchmarkSimonz05GodisPing-4       	  100000	     42532 ns/op	     348 B/op	       7 allocs/op
+BenchmarkSimonz05GodisSet-4        	  100000	     45562 ns/op	     543 B/op	      15 allocs/op
+BenchmarkSimonz05GodisGet-4        	  100000	     41102 ns/op	     463 B/op	      12 allocs/op
+BenchmarkSimonz05GodisIncr-4       	  100000	     42312 ns/op	     447 B/op	      11 allocs/op
+BenchmarkSimonz05GodisLPush-4      	  100000	     45792 ns/op	     559 B/op	      16 allocs/op
+BenchmarkSimonz05GodisLRange10-4   	   50000	     54043 ns/op	    2095 B/op	      62 allocs/op
+BenchmarkSimonz05GodisLRange100-4  	   30000	    105272 ns/op	   14415 B/op	     422 allocs/op
+BenchmarkSimonz05GodisLRange1000-4 	    5000	    552231 ns/op	  136913 B/op	    4023 allocs/op
+ok  	github.com/HearingFish/redis/_benchmarks	176.916s

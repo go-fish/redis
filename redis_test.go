@@ -24,73 +24,66 @@ func init() {
 	pool1 = redigo.NewPool(fn, 5)
 }
 
-func TestDo(t *testing.T) {
+// func TestDo(t *testing.T) {
+// 	conn, err := pool.GetConnection()
+// 	if err != nil {
+// 		t.Fatalf("wanted nil, get %v", err)
+// 	}
+
+// 	//do
+// 	val, err := conn.Do("SET", "test111", 111)
+// 	if err != nil {
+// 		t.Fatalf("wanted nil, get %v", err)
+// 	}
+
+// 	v, ok := val.(bool)
+// 	if !ok {
+// 		t.Fatalf("wanted []byte, get %T", val)
+// 	}
+
+// 	if !v {
+// 		t.Fatalf("wanted true, get %v", v)
+// 	}
+
+// 	val, err = conn.Do("GET", "test111")
+// 	if err != nil {
+// 		t.Fatalf("wanted nil, get %v", err)
+// 	}
+
+// 	v1, ok := val.([]byte)
+// 	if !ok {
+// 		t.Fatalf("wanted int, get %T", val)
+// 	}
+
+// 	if string(v1) != "111" {
+// 		t.Fatalf("wanted 111, get %v", v1)
+// 	}
+// }
+
+// func Test_LRange1000(t *testing.T) {
+// 	conn, err := pool.GetConnection()
+// 	if err != nil {
+// 		t.Fatalf("wanted nil, get %v", err)
+// 	}
+
+// 	s, err := conn.Lrange("hello", 0, 1000)
+// 	if err != nil {
+// 		t.Fatalf(err.Error())
+// 	}
+
+// 	fmt.Println(s)
+// }
+
+func Test_Pipeline(t *testing.T) {
 	conn, err := pool.GetConnection()
 	if err != nil {
 		t.Fatalf("wanted nil, get %v", err)
 	}
 
-	//do
-	val, err := conn.Do("SET", "test111", 111)
-	if err != nil {
-		t.Fatalf("wanted nil, get %v", err)
-	}
+	conn.Add("LRANGE", "hello", 0, 10)
+	conn.Add("LRANGE", "hello", 10, 20)
+	conn.Add("LRANGE", "hello", 20, 30)
+	conn.Add("LRANGE", "hello", 30, 40)
 
-	v, ok := val.(bool)
-	if !ok {
-		t.Fatalf("wanted []byte, get %T", val)
-	}
-
-	if !v {
-		t.Fatalf("wanted true, get %v", v)
-	}
-
-	val, err = conn.Do("GET", "test111")
-	if err != nil {
-		t.Fatalf("wanted nil, get %v", err)
-	}
-
-	v1, ok := val.([]byte)
-	if !ok {
-		t.Fatalf("wanted int, get %T", val)
-	}
-
-	if string(v1) != "111" {
-		t.Fatalf("wanted 111, get %v", v1)
-	}
-}
-
-func Test_LRange10(t *testing.T) {
-	conn, err := pool.GetConnection()
-	if err != nil {
-		t.Fatalf("wanted nil, get %v", err)
-	}
-
-	b, err := conn.Do("LRANGE", "hello", 0, 10)
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-
-	fmt.Println(b)
-
-	s, err := conn.Lrange("hello", 0, 10)
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-
-	fmt.Println(s)
-}
-
-func Test_LRange100(t *testing.T) {
-	conn, err := pool.GetConnection()
-	if err != nil {
-		t.Fatalf("wanted nil, get %v", err)
-	}
-
-	s, err := conn.Lrange("hello", 0, 100)
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-
-	fmt.Println(s)
+	fmt.Println(conn.Flush())
 }

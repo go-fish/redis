@@ -69,7 +69,6 @@ func (t *item) next(need int) []byte {
 	offset := t.idx
 	t.idx += need
 	t.free -= need
-
 	return t.buff[offset:t.idx]
 }
 
@@ -92,8 +91,17 @@ func (t *item) reset() {
 }
 
 func (t *item) grow(need int) {
-	newBuf := make([]byte, ((need/defaultBlockSize)+1)*defaultBlockSize)
+	multiple := need/len(t.buff) + 1
+	if multiple < 2 {
+		multiple = 2
+	}
+
+	newBuf := make([]byte, multiple*len(t.buff))
 	copy(newBuf, t.buff)
 	t.buff = newBuf
 	t.free = len(newBuf) - t.idx
+}
+
+func (t *item) data() []byte {
+	return t.buff[:t.idx]
 }

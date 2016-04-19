@@ -111,3 +111,14 @@ func BenchmarkGosexyRedisLRange100(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkGosexyRedisLRange1000(b *testing.B) {
+	var err error
+	for i := 0; i < b.N; i++ {
+		_, err = gosexyRedisClient.LRange("hello", 0, 1000)
+		if err != nil {
+			b.Fatalf(err.Error())
+			break
+		}
+	}
+}

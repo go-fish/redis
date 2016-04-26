@@ -2670,7 +2670,7 @@ func (c *Conn) Lindex(key string, index int64) (string, error) {
 
 //Linsert
 func (c *Conn) Linsert(key, argv, pivot, value string) (int64, error) {
-	if argv != "BEFORE" || argv != "AFTER" {
+	if argv != "BEFORE" && argv != "AFTER" {
 		return -1, ErrMalformedArgvs
 	}
 
